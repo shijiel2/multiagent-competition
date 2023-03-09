@@ -104,3 +104,6 @@ ENV/
 /rllab-multi/extra
 /output
 .DS_STORE
+
+# user specify
+video

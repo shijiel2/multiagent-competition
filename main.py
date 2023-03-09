@@ -1,11 +1,14 @@
 from policy import LSTMPolicy, MlpPolicyValue
 import gym
 import gym_compete
+from gym_compete.new_envs.multi_monitoring import MultiMonitor
 import pickle
 import sys
 import argparse
 import tensorflow as tf
 import numpy as np
+from xvfbwrapper import Xvfb
+vdisplay = Xvfb()
 
 def load_from_file(param_pkl_path):
     with open(param_pkl_path, 'rb') as f:
@@ -48,6 +51,12 @@ def run(config):
         print("unsupported environment")
         print("choose from: run-to-goal-humans, run-to-goal-ants, you-shall-not-pass, sumo-humans, sumo-ants, kick-and-defend")
         sys.exit()
+    if config.record == "true":
+        env = MultiMonitor(env, './video', force=True, video_callable=lambda episode_id: True)
+    elif config.record == "false":
+        pass
+    else:
+        raise Exception("unsupported config.record, use --help")
 
     param_paths = config.param_paths
 
@@ -111,12 +120,16 @@ def run(config):
                 policy[i].reset()
             if num_episodes < max_episodes:
                 print("-"*5 + "Episode %d" % (num_episodes+1) + "-"*5)
+    env.close()
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Environments for Multi-agent competition")
     p.add_argument("--env", default="sumo-humans", type=str, help="competitive environment: run-to-goal-humans, run-to-goal-ants, you-shall-not-pass, sumo-humans, sumo-ants, kick-and-defend")
     p.add_argument("--param-paths", nargs='+', required=True, type=str)
     p.add_argument("--max-episodes", default=10, help="max number of matches", type=int)
+    p.add_argument("--record", default="false", type=str, help="record the video or not: true, false")
 
     config = p.parse_args()
+    vdisplay.start()
     run(config)
+    vdisplay.stop()
